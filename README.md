@@ -1,4 +1,4 @@
-## Multipart + Presigned URL upload to AWS S3/Minio via the browser
+## Multipart + Presigned URL upload to AWS S3 via the browser
 
 ### Motivation
 
@@ -12,53 +12,37 @@ However, I hit a snag when dealing with files > 5GB because the pre-signed URL o
 
 * Frontend Server: React (Next.js)
 * Backend Server: Node.js (Express), using the AWS JS SDK
-* Storage Server: Minio (but this can easily be switched out to AWS S3)
+* Storage Server: AWS S3
 
 ### How to run
 
 * Clone the repo and change directory into the repo
 * Open three different terminal windows.
 
-**Storage Server**
-
-In window 1, run:
-```
-# Set up the Minio server (ignore this if you are using AWS S3)
-# Minio docs: https://docs.minio.io/docs/minio-quickstart-guide
-minio server /data
-```
-> Note: Set the S3-compliant bucket policy as appropriate to allow the right access
-
 **Backend Server**
 
-Replace the following code in `backend/server.js` with your AWS S3 or S3-compliant storage server config.
+add .env file with
 
-```
-const s3  = new AWS.S3({
-  accessKeyId: '<ACCESS_KEY_ID>' , // Replace with your access key id
-  secretAccessKey: '<SECRET_ACCESS_KEY>' , // Replace with your secret access key
-  endpoint: 'http://127.0.0.1:9000' ,
-  s3ForcePathStyle: true, // needed with minio?
-  signatureVersion: 'v4'
-});
+```bash
+AWS_ACCESS_KEY=<key>
+AWS_SECRET_ACCESS=<secret>
+AWS_S3_BUCKET=<bucket name>
 ```
 
-Note: If you are using AWS S3, follow the docs on the AWS website to instantiate a new AWS S3 client.
-
-In window 2, run:
-```
+run:
+```bash
 cd backend
 npm install
-node server.js
+npm start
 ```
 
 **Frontend Server**
 
-In window 3, run:
-```
+run:
+```bash
 cd frontend
 npm install
-npm run dev
+npm start
 ```
 
 **Upload File**

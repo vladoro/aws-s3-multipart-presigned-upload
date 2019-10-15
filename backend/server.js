@@ -4,17 +4,26 @@ const BluebirdPromise = require('bluebird')
 const AWS = require('aws-sdk')
 const bodyParser = require('body-parser')
 
+/* eslint-disable import/no-dynamic-require */
+const envPath = './../.env';
+const fs = require('fs');
+
+if (fs.existsSync(envPath)) {
+  require('dotenv').config({ path: envPath });
+}
+
 app.use(bodyParser.json())
 
 const port = 4000
-const BUCKET_NAME = "vaultgovsg"
+const { AWS_S3_BUCKET, AWS_ACCESS_KEY, AWS_SECRET_ACCESS } = process.env;
+const AWS_S3_BUCKET_URL = `https://${AWS_S3_BUCKET}.s3.amazonaws.com`;
 
 const s3  = new AWS.S3({
-	accessKeyId: '<ACCESS_KEY_ID>' , // Replace with your access key id
-	secretAccessKey: '<SECRET_ACCESS_KEY>' , // Replace with your secret access key
-	endpoint: 'http://127.0.0.1:9000' ,
-	s3ForcePathStyle: true, // needed with minio?
-	signatureVersion: 'v4'
+	accessKeyId: AWS_ACCESS_KEY,
+	secretAccessKey: AWS_SECRET_ACCESS,
+	endpoint: AWS_S3_BUCKET_URL,
+	s3ForcePathStyle: true,
+	signatureVersion: 'v4',
 });
 
 app.use(function(req, res, next) {
@@ -30,12 +39,13 @@ app.get('/', (req, res, next) => {
 app.get('/start-upload', async (req, res, next) => {
 	try {
 		let params = {
-			Bucket: BUCKET_NAME,
+			Bucket: AWS_S3_BUCKET,
 			Key: req.query.fileName,
 			ContentType: req.query.fileType
 		}
 		let createUploadPromised = BluebirdPromise.promisify(s3.createMultipartUpload.bind(s3))
-		let uploadData = await createUploadPromised(params)
+    let uploadData = await createUploadPromised(params)
+    console.debug({ uploadData })
 		res.send({uploadId: uploadData.UploadId})
 	} catch(err) {
 		console.log(err)
@@ -45,7 +55,7 @@ app.get('/start-upload', async (req, res, next) => {
 app.get('/get-upload-url', async (req, res, next) => {
 	try {
 		let params = {
-			Bucket: BUCKET_NAME,
+			Bucket: AWS_S3_BUCKET,
 			Key: req.query.fileName,
 			PartNumber: req.query.partNumber,
 			UploadId: req.query.uploadId
@@ -63,7 +73,7 @@ app.post('/complete-upload', async (req, res, next) => {
 	try {
 		console.log(req.body, ': body')
 		let params = {
-			Bucket: BUCKET_NAME,
+			Bucket: AWS_S3_BUCKET,
 			Key: req.body.params.fileName,
 			MultipartUpload: {
 				Parts: req.body.params.parts
